@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DLMS BY RIZQY + SUB (TRIAL)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; -webkit-tap-highlight-color: transparent; }
+        body { background: linear-gradient(135deg, #0a0a0a, #1a0a2e); color: #00ff88; padding: 6px; min-height: 100vh; display: flex; justify-content: center; }
+        .container { max-width: 500px; width: 100%; background: rgba(20,20,40,0.95); border: 1px solid #00ff88; border-radius: 12px; padding: 10px; max-height: 98vh; overflow-y: auto; }
+        .container::-webkit-scrollbar { width: 4px; }
+        .container::-webkit-scrollbar-thumb { background: #00ff88; border-radius: 4px; }
+        .header { text-align: center; padding: 10px; background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(0,255,136,0.2); }
+        .header h1 { font-size: 1.1rem; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
+        .header h2 { font-size: 0.7rem; color: #ff6b9d; margin-top: 2px; }
+        .trial-banner { background: rgba(255,200,0,0.15); border: 1px solid #ffdd00; border-radius: 8px; padding: 6px; text-align: center; font-size: 0.65rem; color: #ffdd00; margin-bottom: 8px; }
+        .trial-banner span { font-weight: bold; color: #00ff88; }
+        .audio-box { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+        .audio-box input[type="file"] { width: 100%; padding: 6px; background: #1a1a2e; border: 1px solid #333; border-radius: 6px; color: #00ff88; font-size: 0.65rem; margin-bottom: 6px; }
+        audio { width: 100%; border-radius: 8px; background: #1a1a2e; }
+        .playlist-container { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 6px; margin-bottom: 8px; border: 1px solid rgba(0,255,136,0.1); max-height: 160px; overflow-y: auto; }
+        .playlist-container::-webkit-scrollbar { width: 3px; }
+        .playlist-container::-webkit-scrollbar-thumb { background: #00ff88; border-radius: 4px; }
+        .playlist-header { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; margin-bottom: 4px; border-bottom: 1px solid #222; }
+        .playlist-header span { font-size: 0.6rem; color: #ff6b9d; font-weight: bold; }
+        .playlist-header .count { font-size: 0.5rem; color: #666; }
+        .playlist-item { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-radius: 4px; cursor: pointer; transition: all 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .playlist-item:hover { background: rgba(0,255,136,0.05); }
+        .playlist-item.active { background: rgba(0,255,136,0.15); border-left: 3px solid #00ff88; }
+        .playlist-item .index { font-size: 0.45rem; color: #666; min-width: 16px; }
+        .playlist-item .name { flex: 1; font-size: 0.55rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .playlist-item .name.active-text { color: #00ff88; }
+        .playlist-item .remove-btn { background: none; border: none; color: #ff3355; cursor: pointer; font-size: 0.5rem; padding: 0 4px; }
+        .playlist-controls { display: flex; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
+        .playlist-controls button { flex: 1; min-width: 36px; padding: 3px 4px; border: 1px solid #333; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 0.5rem; cursor: pointer; transition: all 0.3s; }
+        .playlist-controls button:hover { background: #2a2a4a; }
+        .playlist-controls button.active-btn { background: #00ff88; color: #000; border-color: #00ff88; }
+        .vol-container { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+        .vol-card { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(0,255,136,0.1); }
+        .vol-card .label { font-size: 0.6rem; color: #ff6b9d; font-weight: bold; }
+        .vol-card .value { font-size: 0.6rem; color: #00ff88; }
+        .vol-card input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: linear-gradient(90deg, #00ff88, #ff6b9d); border-radius: 2px; margin: 4px 0; }
+        .vol-card input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: radial-gradient(circle, #00ff88, #00cc66); border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(0,255,136,0.3); }
+        .mute-btn { padding: 4px 12px; border: none; border-radius: 16px; background: #2a2a4a; color: #fff; font-size: 0.55rem; font-weight: bold; cursor: pointer; margin-top: 3px; transition: all 0.3s; }
+        .mute-btn.muted { background: #ff3355; box-shadow: 0 0 16px rgba(255,51,85,0.4); }
+        .vu-container { display: flex; gap: 2px; justify-content: center; margin: 3px 0; }
+        .vu-bar { width: 4px; height: 24px; background: #1a1a2e; border-radius: 2px; transition: all 0.05s; border: 1px solid #222; }
+        .vu-bar.active-green { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
+        .vu-bar.active-yellow { background: #ffdd00; box-shadow: 0 0 6px #ffdd00; }
+        .vu-bar.active-red { background: #ff3355; box-shadow: 0 0 6px #ff3355; }
+        .balance-container { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; border: 1px solid rgba(0,255,136,0.1); }
+        .balance-container .label { font-size: 0.6rem; color: #ff6b9d; font-weight: bold; display: block; margin-bottom: 3px; }
+        .balance-container input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: linear-gradient(90deg, #ff3355, #00ff88); border-radius: 2px; }
+        .balance-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: radial-gradient(circle, #ff6b9d, #ff3355); border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(255,107,157,0.3); }
+        .balance-container .value { font-size: 0.6rem; color: #00ff88; }
+        .sub-container { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,107,157,0.2); }
+        .sub-container .label { font-size: 0.6rem; color: #ff6b9d; font-weight: bold; display: block; text-align: center; margin-bottom: 3px; }
+        .sub-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .sub-item { background: rgba(0,0,0,0.2); padding: 3px 6px; border-radius: 4px; text-align: center; }
+        .sub-item label { font-size: 0.5rem; color: #ff3355; display: block; }
+        .sub-item input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: linear-gradient(90deg, #ff3355, #ff6b9d); border-radius: 2px; }
+        .sub-item input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: radial-gradient(circle, #ff3355, #ff6b9d); border-radius: 50%; cursor: pointer; }
+        .sub-item .val { font-size: 0.5rem; color: #ff3355; text-align: right; display: block; }
+        .limiter-container { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; border: 1px solid rgba(255,107,157,0.2); }
+        .limiter-container .label { font-size: 0.6rem; color: #ff6b9d; font-weight: bold; display: block; margin-bottom: 3px; }
+        .limiter-container input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: linear-gradient(90deg, #ff3355, #ffdd00, #00ff88); border-radius: 2px; }
+        .limiter-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: radial-gradient(circle, #ff6b9d, #ff3355); border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(255,107,157,0.3); }
+        .limiter-container .value { font-size: 0.6rem; color: #00ff88; }
+        .limiter-container .info { font-size: 0.5rem; color: #666; margin-top: 3px; }
+        .channel { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(0,255,136,0.1); }
+        .channel-title { font-size: 0.7rem; color: #fff; text-align: center; padding: 4px; background: #1a1a2e; border-radius: 4px; margin-bottom: 6px; font-weight: bold; }
+        .channel-title.sub { border-left: 4px solid #ff3355; color: #ff6b9d; }
+        .channel-title.mid { border-left: 4px solid #00ff88; color: #00ff88; }
+        .xover-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+        .xover-item { background: rgba(0,0,0,0.2); padding: 3px 6px; border-radius: 4px; }
+        .xover-item label { font-size: 0.5rem; color: #ff9f43; display: block; }
+        .xover-item input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: linear-gradient(90deg, #ff9f43, #ff6b9d); border-radius: 2px; }
+        .xover-item input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: radial-gradient(circle, #ff9f43, #ff6b9d); border-radius: 50%; cursor: pointer; }
+        .xover-item .val { font-size: 0.5rem; color: #ff9f43; text-align: right; display: block; }
+        .eq-container { display: flex; gap: 2px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
+        .eq-container::-webkit-scrollbar { height: 3px; }
+        .eq-container::-webkit-scrollbar-thumb { background: #00d2d3; border-radius: 4px; }
+        .eq-item { display: flex; flex-direction: column; align-items: center; min-width: 24px; }
+        .eq-item .eq-val { font-size: 0.4rem; color: #00d2d3; min-height: 14px; }
+        .eq-item input[type="range"] { writing-mode: vertical-lr; direction: rtl; height: 56px; width: 10px; -webkit-appearance: none; background: linear-gradient(to top, #00d2d3, #ff6b9d); border-radius: 4px; margin: 2px 0; }
+        .eq-item input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: radial-gradient(circle, #00d2d3, #0066ff); border-radius: 50%; cursor: pointer; }
+        .eq-item .eq-label { font-size: 0.4rem; color: #666; }
+        .preset-box { display: flex; gap: 3px; flex-wrap: wrap; margin: 6px 0; }
+        .preset-box button { flex: 1; min-width: 40px; padding: 4px 3px; border: 1px solid #444; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 0.5rem; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .preset-box button.active { background: #00ff88; color: #000; border-color: #00ff88; }
+        .settings-box { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
+        .settings-box button { flex: 1; min-width: 40px; padding: 4px 3px; border: 1px solid #444; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 0.5rem; font-weight: bold; cursor: pointer; }
+        .status { font-size: 0.5rem; color: #666; text-align: center; padding: 4px; margin-top: 4px; border-top: 1px solid #222; }
+        .trial-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; padding: 20px; }
+        .trial-overlay h1 { color: #ff3355; font-size: 1.5rem; margin-bottom: 12px; }
+        .trial-overlay p { color: #ccc; font-size: 0.8rem; text-align: center; max-width: 300px; }
+        .trial-overlay button { margin-top: 16px; padding: 8px 24px; border: none; border-radius: 20px; background: #00ff88; color: #000; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+        @media (max-width: 400px) { .eq-item { min-width: 20px; } .eq-item input[type="range"] { height: 44px; width: 8px; } }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <div class="header">
+        <h1>🎵 DLMS BY RIZQY + SUB</h1>
+        <h2>Professional 2-WAY + Subwoofer</h2>
+    </div>
+
+    <!-- TRIAL BANNER -->
+    <div class="trial-banner" id="trialBanner">🔓 TRIAL: <span id="trialDaysLeft">3</span> hari tersisa</div>
+
+    <div class="audio-box">
+        <input type="file" id="audioFile" accept="audio/*" multiple>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+
+    <div class="playlist-container" id="playlistContainer">
+        <div class="playlist-header"><span>📋 Playlist</span><span class="count" id="playlistCount">0 lagu</span></div>
+        <div id="playlistItems"></div>
+        <div class="playlist-controls">
+            <button onclick="playlistPlay()">▶️</button>
+            <button onclick="playlistPause()">⏸️</button>
+            <button onclick="playlistPrev()">⏮️</button>
+            <button onclick="playlistNext()">⏭️</button>
+            <button onclick="playlistClear()">🗑️</button>
+            <button onclick="playlistShuffle()" id="shuffleBtn">🔀</button>
+            <button onclick="playlistRepeat()" id="repeatBtn">🔁</button>
+        </div>
+    </div>
+
+    <div class="vol-container">
+        <div class="vol-card">
+            <div class="label">🔊 L (SUB)</div>
+            <div class="vu-container" id="vuL"></div>
+            <input type="range" id="volL" min="0" max="2" step="0.01" value="1">
+            <div class="value" id="volValL">0 dB</div>
+            <button class="mute-btn" id="muteL">Mute</button>
+        </div>
+        <div class="vol-card">
+            <div class="label">🔊 R (MID)</div>
+            <div class="vu-container" id="vuR"></div>
+            <input type="range" id="volR" min="0" max="2" step="0.01" value="1">
+            <div class="value" id="volValR">0 dB</div>
+            <button class="mute-btn" id="muteR">Mute</button>
+        </div>
+    </div>
+
+    <div class="balance-container">
+        <span class="label">⚖️ Balance L / R</span>
+        <input type="range" id="balance" min="-1" max="1" step="0.01" value="0">
+        <span class="value" id="balanceVal">Center</span>
+    </div>
+
+    <div class="sub-container">
+        <span class="label">🔊 SUBWOOFER L / R</span>
+        <div class="sub-row">
+            <div class="sub-item">
+                <label>SUB L (Boost 20-120Hz)</label>
+                <input type="range" id="subL" min="0" max="200" step="1" value="100">
+                <span class="val" id="subLVal">100%</span>
+            </div>
+            <div class="sub-item">
+                <label>SUB R (Boost 20-120Hz)</label>
+                <input type="range" id="subR" min="0" max="200" step="1" value="100">
+                <span class="val" id="subRVal">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="limiter-container">
+        <span class="label">📊 Limiter (Threshold)</span>
+        <input type="range" id="limiterThreshold" min="-60" max="0" step="1" value="-6">
+        <span class="value" id="limiterVal">-6 dB</span>
+        <div class="info">Mencegah clipping</div>
+    </div>
+
+    <div class="channel">
+        <div class="channel-title sub">🔴 CHANNEL L - SUBWOOFER</div>
+        <div class="xover-row">
+            <div class="xover-item">
+                <label>HPF</label>
+                <input type="range" id="hpfL" min="20" max="250" value="20">
+                <span class="val" id="hpfLval">20Hz</span>
+            </div>
+            <div class="xover-item">
+                <label>LPF</label>
+                <input type="range" id="lpfL" min="40" max="500" value="100">
+                <span class="val" id="lpfLval">100Hz</span>
+            </div>
+        </div>
+        <div class="eq-container" id="eqL"></div>
+    </div>
+
+    <div class="channel">
+        <div class="channel-title mid">🟢 CHANNEL R - MID HIGH</div>
+        <div class="xover-row">
+            <div class="xover-item">
+                <label>HPF</label>
+                <input type="range" id="hpfR" min="20" max="1000" value="100">
+                <span class="val" id="hpfRval">100Hz</span>
+            </div>
+            <div class="xover-item">
+                <label>LPF</label>
+                <input type="range" id="lpfR" min="1000" max="20000" value="20000">
+                <span class="val" id="lpfRval">20kHz</span>
+            </div>
+        </div>
+        <div class="eq-container" id="eqR"></div>
+    </div>
+
+    <div class="preset-box">
+        <button class="active" onclick="loadPreset('flat')">Flat</button>
+        <button onclick="loadPreset('clear')" style="border-color:#00d2d3;">Clear</button>
+        <button onclick="loadPreset('rock')">Rock</button>
+        <button onclick="loadPreset('metal')">Metal</button>
+        <button onclick="loadPreset('pop')">Pop</button>
+        <button onclick="loadPreset('jazz')">Jazz</button>
+        <button onclick="loadPreset('electronic')" style="border-color:#ff3355;">Electronic</button>
+        <button onclick="loadPreset('bass')">Bass</button>
+        <button onclick="loadPreset('treble')">Treble</button>
+        <button onclick="loadPreset('club')">Club</button>
+    </div>
+
+    <div class="settings-box">
+        <button onclick="saveSettings()">💾 Save</button>
+        <button onclick="loadSettings()">📂 Load</button>
+        <button onclick="resetAll()">🔄 Reset</button>
+    </div>
+
+    <div class="status" id="status">✅ Siap | Space = Play/Pause</div>
+</div>
+
+<script>
+// ============================================================
+// TRIAL 3 HARI + FINGERPRINT
+// ============================================================
+const TRIAL_DAYS = 3;
+const TRIAL_MS = TRIAL_DAYS * 24 * 60 * 60 * 1000;
+
+function getDeviceId() {
+    const data = navigator.userAgent + screen.width + screen.height + navigator.language + new Date().getTimezoneOffset();
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+        hash = ((hash << 5) - hash) + data.charCodeAt(i);
+        hash |= 0;
+    }
+    return 'DEV_' + Math.abs(hash).toString(36);
+}
+
+function checkTrial() {
+    return true; //
+
+    const id = getDeviceId();
+    const trialKey = 'dlms_trial_' + id;
+    let data = localStorage.getItem(trialKey);
+    const now = Date.now();
+
+    if (!data) {
+        // First time open
+        localStorage.setItem(trialKey, JSON.stringify({ start: now, end: now + TRIAL_MS }));
+        updateTrialBanner(TRIAL_DAYS);
+        return true;
+    }
+
+    try {
+        const d = JSON.parse(data);
+        const remaining = d.end - now;
+        if (remaining <= 0) {
+            // Trial expired
+            showTrialOverlay();
+            return false;
+        }
+        const daysLeft = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+        updateTrialBanner(daysLeft);
+        return true;
+    } catch(e) {
+        localStorage.removeItem(trialKey);
+        return checkTrial();
+    }
+}
+
+function updateTrialBanner(days) {
+    const banner = document.getElementById('trialBanner');
+    const span = document.getElementById('trialDaysLeft');
+    if (span) span.textContent = days;
+    if (days <= 0) {
+        banner.innerHTML = '⛔ TRIAL HABIS! Beli lisensi.';
+        banner.style.borderColor = '#ff3355';
+        banner.style.color = '#ff3355';
+    } else {
+        banner.innerHTML = '🔓 TRIAL: <span id="trialDaysLeft">' + days + '</span> hari tersisa';
+        banner.style.borderColor = '#ffdd00';
+        banner.style.color = '#ffdd00';
+    }
+}
+
+function showTrialOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'trial-overlay';
+    overlay.id = 'trialOverlay';
+    overlay.innerHTML = `
+        <h1>⛔ TRIAL HABIS</h1>
+        <p>Masa trial 3 hari Anda telah berakhir.</p>
+        <p style="font-size:0.6rem;color:#666;margin-top:8px;">Hubungi admin untuk aktivasi lisensi permanen.</p>
+        <button onclick="document.getElementById('trialOverlay').style.display='none';">Tutup</button>
+    `;
+    document.body.appendChild(overlay);
+    // Lock semua fitur
+    document.querySelectorAll('button, input').forEach(el => el.disabled = true);
+    document.getElementById('status').textContent = '⛔ Trial habis, hubungi admin';
+}
+
+// ============================================================
+// ANTI-CURANG: DETEKSI HAPUS LOCALSTORAGE
+// ============================================================
+const origClear = Storage.prototype.clear;
+Storage.prototype.clear = function() {
+    if (this === localStorage) {
+        alert('⚠️ Jangan curang! Trial akan tetap berjalan.');
+        sessionStorage.setItem('dlms_cheat', Date.now());
+    }
+    origClear.call(this);
+};
+if (sessionStorage.getItem('dlms_cheat')) {
+    showTrialOverlay();
+}
+
+// ============================================================
+// Cek trial di awal
+// ============================================================
+const trialValid = checkTrial();
+if (!trialValid) {
+    // Overlay udah muncul, tapi tetap jalanin audio biar gak error
+}
+
+// ============================================================
+// DLMS AL AUDIO + SUBWOOFER (SAMA KAYAK SEBELUMNYA)
+// ============================================================
+const eqFreq = [25,40,63,100,160,250,400,630,1000,1600,2500,4000,6300,10000,16000];
+const audio = document.getElementById('audioPlayer');
+const fileInput = document.getElementById('audioFile');
+
+let playlist = [];
+let currentIndex = -1;
+let shuffleMode = false;
+let repeatMode = false;
+
+let ctx = null;
+let source = null;
+let splitter = null;
+let merger = null;
+let gainL = null, gainR = null;
+let analyserL = null, analyserR = null;
+let filtersL = [], filtersR = [];
+let hpfLNode = null, lpfLNode = null, hpfRNode = null, lpfRNode = null;
+let limiterL = null, limiterR = null;
+let initialized = false;
+let mutedL = false, mutedR = false;
+let isPlaying = false;
+let animationId = null;
+let isSwitchingTrack = false;
+let subL = 100, subR = 100;
+
+function buildVU(id) {
+    const c = document.getElementById(id);
+    c.innerHTML = '';
+    for (let i = 0; i < 8; i++) { const b = document.createElement('div'); b.className = 'vu-bar'; c.appendChild(b); }
+}
+buildVU('vuL'); buildVU('vuR');
+
+function updateVU(id, level) {
+    const bars = document.getElementById(id).children;
+    const active = Math.min(Math.round((level / 140) * bars.length), bars.length);
+    for (let i = 0; i < bars.length; i++) {
+        bars[i].className = 'vu-bar';
+        if (i >= bars.length - active) {
+            const pos = i - (bars.length - active);
+            if (pos < 2) bars[i].classList.add('active-red');
+            else if (pos < 4) bars[i].classList.add('active-yellow');
+            else bars[i].classList.add('active-green');
+        }
+    }
+}
+
+function buildEQ(containerId, channel) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    eqFreq.forEach((freq, i) => {
+        const label = freq >= 1000 ? (freq/1000)+'k' : freq;
+        const div = document.createElement('div');
+        div.className = 'eq-item';
+        div.innerHTML = `<span class="eq-val" id="eqval-${channel}-${i}">0</span><input type="range" id="eqsl-${channel}-${i}" min="-12" max="12" step="1" value="0"><span class="eq-label">${label}</span>`;
+        container.appendChild(div);
+        div.querySelector('input').addEventListener('input', function() {
+            const v = this.value;
+            document.getElementById(`eqval-${channel}-${i}`).textContent = v > 0 ? '+' + v : v;
+            if (initialized && trialValid) {
+                const filters = channel === 'L' ? filtersL : filtersR;
+                if (filters[i]) filters[i].gain.value = parseFloat(v);
+            }
+        });
+    });
+}
+buildEQ('eqL', 'L'); buildEQ('eqR', 'R');
+
+const presets = {
+    flat: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    clear: [-1,-1,0,1,2,3,2,1,0,0,1,2,3,4,4],
+    rock: [-2,0,2,4,6,4,2,0,-1,-2,-3,-2,-1,0,2],
+    metal: [4,3,0,-2,-3,-1,0,2,4,6,5,3,2,0,-2],
+    pop: [-2,-1,0,2,4,6,4,2,0,-1,-2,-1,0,1,2],
+    jazz: [2,3,4,3,2,1,0,-1,-2,-2,-1,0,1,2,3],
+    electronic: [2,3,4,5,4,2,0,-1,-2,-2,0,2,4,5,4],
+    bass: [4,5,4,3,1,0,-1,-2,-2,-1,0,0,0,0,0],
+    treble: [0,0,0,0,0,0,0,0,0,1,2,3,4,5,6],
+    club: [0,1,2,3,4,3,2,1,0,-1,-2,-1,0,2,3]
+};
+
+window.loadPreset = function(name) {
+    if (!trialValid) return;
+    const vals = presets[name] || presets.flat;
+    document.querySelectorAll('.preset-box button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.preset-box button').forEach(b => {
+        const txt = b.textContent.toLowerCase();
+        if (txt === name || txt.replace(' ', '') === name) b.classList.add('active');
+    });
+    document.querySelectorAll('#eqL input[type="range"]').forEach((sl, i) => {
+        if (vals[i] !== undefined) { sl.value = vals[i]; sl.dispatchEvent(new Event('input')); }
+    });
+    document.querySelectorAll('#eqR input[type="range"]').forEach((sl, i) => {
+        if (vals[i] !== undefined) { sl.value = vals[i]; sl.dispatchEvent(new Event('input')); }
+    });
+    document.getElementById('status').textContent = '🎛️ Preset: ' + name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+function updateSub() {
+    if (!trialValid) return;
+    subL = parseInt(document.getElementById('subL').value);
+    subR = parseInt(document.getElementById('subR').value);
+    document.getElementById('subLVal').textContent = subL + '%';
+    document.getElementById('subRVal').textContent = subR + '%';
+    if (initialized) {
+        const volL = parseFloat(document.getElementById('volL').value);
+        const volR = parseFloat(document.getElementById('volR').value);
+        const balance = parseFloat(document.getElementById('balance').value);
+        const factorL = balance <= 0 ? 1 : 1 - balance;
+        const factorR = balance >= 0 ? 1 : 1 + balance;
+        if (gainL && !mutedL) gainL.gain.value = volL * factorL * (subL / 100);
+        if (gainR && !mutedR) gainR.gain.value = volR * factorR * (subR / 100);
+    }
+}
+
+function renderPlaylist() {
+    const container = document.getElementById('playlistItems');
+    const count = document.getElementById('playlistCount');
+    count.textContent = playlist.length + ' lagu';
+    if (playlist.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#666;font-size:0.5rem;padding:8px;">Belum ada lagu.</div>';
+        return;
+    }
+    container.innerHTML = '';
+    playlist.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'playlist-item' + (index === currentIndex ? ' active' : '');
+        div.innerHTML = `<span class="index">${index + 1}</span><span class="name ${index === currentIndex ? 'active-text' : ''}">${item.name}</span><button class="remove-btn" onclick="playlistRemove(${index})">✕</button>`;
+        div.addEventListener('click', () => { playlistPlayIndex(index); });
+        container.appendChild(div);
+    });
+}
+
+function playlistAdd(file) {
+    if (!trialValid) return;
+    const url = URL.createObjectURL(file);
+    playlist.push({ name: file.name, url: url, file: file });
+    if (playlist.length === 1) { currentIndex = 0; loadTrack(0); }
+    renderPlaylist();
+}
+
+function playlistRemove(index) {
+    if (!trialValid) return;
+    if (index < 0 || index >= playlist.length) return;
+    if (playlist[index].url) URL.revokeObjectURL(playlist[index].url);
+    playlist.splice(index, 1);
+    if (playlist.length === 0) { currentIndex = -1; audio.pause(); audio.src = ''; resetAudioContext(); renderPlaylist(); return; }
+    if (index === currentIndex) { currentIndex = index >= playlist.length ? playlist.length - 1 : index; loadTrack(currentIndex); }
+    else if (index < currentIndex) currentIndex--;
+    renderPlaylist();
+}
+
+function playlistClear() {
+    if (!trialValid) return;
+    if (playlist.length === 0) return;
+    if (!confirm('Hapus semua lagu?')) return;
+    playlist.forEach(item => { if (item.url) URL.revokeObjectURL(item.url); });
+    playlist = []; currentIndex = -1; audio.pause(); audio.src = ''; resetAudioContext(); renderPlaylist();
+}
+
+function playlistPlay() { if (!trialValid || playlist.length === 0) return; if (currentIndex < 0) { currentIndex = 0; loadTrack(0); } audio.play(); }
+function playlistPause() { audio.pause(); }
+function playlistNext() {
+    if (!trialValid || playlist.length === 0) return;
+    let next = shuffleMode ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
+    if (next === currentIndex && playlist.length > 1) next = (next + 1) % playlist.length;
+    currentIndex = next; loadTrack(currentIndex); if (!audio.paused) audio.play();
+}
+function playlistPrev() {
+    if (!trialValid || playlist.length === 0) return;
+    let prev = shuffleMode ? Math.floor(Math.random() * playlist.length) : (currentIndex - 1 + playlist.length) % playlist.length;
+    if (prev === currentIndex && playlist.length > 1) prev = (prev + 1) % playlist.length;
+    currentIndex = prev; loadTrack(currentIndex); if (!audio.paused) audio.play();
+}
+function playlistPlayIndex(index) { if (!trialValid || index < 0 || index >= playlist.length) return; currentIndex = index; loadTrack(index); audio.play(); }
+function playlistShuffle() { if (!trialValid) return; shuffleMode = !shuffleMode; document.getElementById('shuffleBtn').classList.toggle('active-btn'); }
+function playlistRepeat() { if (!trialValid) return; repeatMode = !repeatMode; document.getElementById('repeatBtn').classList.toggle('active-btn'); }
+
+function loadTrack(index) {
+    if (!trialValid) return;
+    if (index < 0 || index >= playlist.length) return;
+    isSwitchingTrack = true;
+    audio.pause();
+    resetAudioContext();
+    const item = playlist[index];
+    audio.src = item.url;
+    audio.load();
+    audio.addEventListener('loadeddata', function onLoaded() {
+        audio.removeEventListener('loadeddata', onLoaded);
+        isSwitchingTrack = false;
+        initialized = false;
+        if (ctx && ctx.state === 'running') {
+            ctx.close().then(() => { ctx = null; source = null; initAudioForTrack(); });
+        } else {
+            ctx = null; source = null; initAudioForTrack();
+        }
+        renderPlaylist();
+        document.getElementById('status').textContent = '▶️ ' + item.name;
+    }, { once: true });
+    setTimeout(() => { if (isSwitchingTrack) { isSwitchingTrack = false; if (!initialized) initAudioForTrack(); } }, 3000);
+}
+
+function resetAudioContext() {
+    if (ctx) { try { if (ctx.state === 'running') ctx.close(); } catch(e) {} ctx = null; }
+    source = null; splitter = null; merger = null; gainL = null; gainR = null; analyserL = null; analyserR = null;
+    filtersL = []; filtersR = []; hpfLNode = null; lpfLNode = null; hpfRNode = null; lpfRNode = null;
+    limiterL = null; limiterR = null; initialized = false;
+}
+
+function setupChannel(ch, idx) {
+    if (!trialValid) return;
+    const isL = ch === 'L';
+    const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = parseFloat(document.getElementById('hpf' + ch).value);
+    const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = parseFloat(document.getElementById('lpf' + ch).value);
+    const eqFilters = []; eqFreq.forEach((freq, i) => {
+        const f = ctx.createBiquadFilter(); f.type = 'peaking'; f.frequency.value = freq; f.Q.value = 1.4; f.gain.value = parseFloat(document.getElementById('eqsl-' + ch + '-' + i).value);
+        eqFilters.push(f);
+    });
+    const gain = ctx.createGain();
+    const balance = parseFloat(document.getElementById('balance').value);
+    const baseGain = isL ? (mutedL ? 0 : parseFloat(document.getElementById('volL').value)) : (mutedR ? 0 : parseFloat(document.getElementById('volR').value));
+    let balanceFactor = isL ? (balance <= 0 ? 1 : 1 - balance) : (balance >= 0 ? 1 : 1 + balance);
+    const subBoost = isL ? (subL / 100) : (subR / 100);
+    gain.gain.value = baseGain * balanceFactor * subBoost;
+    const limiter = ctx.createDynamicsCompressor(); limiter.threshold.value = parseFloat(document.getElementById('limiterThreshold').value); limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.01;
+    const analyser = ctx.createAnalyser(); analyser.fftSize = 32;
+    if (isL) { hpfLNode = hpf; lpfLNode = lpf; filtersL = eqFilters; gainL = gain; analyserL = analyser; limiterL = limiter; }
+    else { hpfRNode = hpf; lpfRNode = lpf; filtersR = eqFilters; gainR = gain; analyserR = analyser; limiterR = limiter; }
+    splitter.connect(hpf, idx);
+    hpf.connect(lpf);
+    let last = lpf;
+    eqFilters.forEach(f => { last.connect(f); last = f; });
+    last.connect(gain);
+    gain.connect(limiter);
+    limiter.connect(analyser);
+    analyser.connect(merger, 0, idx);
+}
+
+function initAudioForTrack() {
+    if (!trialValid || initialized) return;
+    try {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        source = ctx.createMediaElementSource(audio);
+        splitter = ctx.createChannelSplitter(2);
+        merger = ctx.createChannelMerger(2);
+        setupChannel('L', 0);
+        setupChannel('R', 1);
+        source.connect(splitter);
+        merger.connect(ctx.destination);
+        initialized = true;
+        updateLimiter();
+        if (!audio.paused) ctx.resume();
+        document.getElementById('status').textContent = '✅ Audio ready';
+    } catch(e) { console.error('Init error:', e); document.getElementById('status').textContent = '❌ Error: ' + e.message; }
+}
+
+function updateLimiter() {
+    if (!trialValid) return;
+    const threshold = parseFloat(document.getElementById('limiterThreshold').value);
+    document.getElementById('limiterVal').textContent = threshold + ' dB';
+    if (initialized) { if (limiterL) limiterL.threshold.value = threshold; if (limiterR) limiterR.threshold.value = threshold; }
+}
+
+function animateVU() {
+    if (!trialValid || !initialized || !isPlaying) { animationId = requestAnimationFrame(animateVU); return; }
+    try {
+        if (analyserL) {
+            const dL = new Uint8Array(analyserL.frequencyBinCount);
+            analyserL.getByteFrequencyData(dL);
+            const avgL = mutedL ? 0 : dL.reduce((a,b) => a+b, 0) / dL.length;
+            updateVU('vuL', avgL);
+        }
+        if (analyserR) {
+            const dR = new Uint8Array(analyserR.frequencyBinCount);
+            analyserR.getByteFrequencyData(dR);
+            const avgR = mutedR ? 0 : dR.reduce((a,b) => a+b, 0) / dR.length;
+            updateVU('vuR', avgR);
+        }
+    } catch(e) {}
+    animationId = requestAnimationFrame(animateVU);
+}
+
+fileInput.addEventListener('change', function() {
+    if (!trialValid) return;
+    if (this.files.length > 0) {
+        for (let i = 0; i < this.files.length; i++) { playlistAdd(this.files[i]); }
+        this.value = '';
+    }
+});
+
+audio.addEventListener('play', function() {
+    if (!trialValid) return;
+    isPlaying = true;
+    if (!initialized && !isSwitchingTrack) initAudioForTrack();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    if (animationId === null) animateVU();
+    document.getElementById('status').textContent = '▶️ Playing';
+});
+audio.addEventListener('pause', function() { isPlaying = false; document.getElementById('status').textContent = '⏸️ Paused'; });
+audio.addEventListener('ended', function() {
+    isPlaying = false;
+    if (repeatMode && playlist.length > 0) { loadTrack(currentIndex); audio.play(); }
+    else { playlistNext(); }
+    document.getElementById('status').textContent = '⏹️ Ended';
+});
+
+document.getElementById('volL').addEventListener('input', function() {
+    if (!trialValid) return;
+    const val = parseFloat(this.value);
+    document.getElementById('volValL').textContent = val == 0 ? '-∞' : Math.round(20 * Math.log10(val)) + ' dB';
+    if (initialized && !mutedL && gainL) {
+        const balance = parseFloat(document.getElementById('balance').value);
+        const factor = balance <= 0 ? 1 : 1 - balance;
+        gainL.gain.value = val * factor * (subL / 100);
+    }
+});
+document.getElementById('volR').addEventListener('input', function() {
+    if (!trialValid) return;
+    const val = parseFloat(this.value);
+    document.getElementById('volValR').textContent = val == 0 ? '-∞' : Math.round(20 * Math.log10(val)) + ' dB';
+    if (initialized && !mutedR && gainR) {
+        const balance = parseFloat(document.getElementById('balance').value);
+        const factor = balance >= 0 ? 1 : 1 + balance;
+        gainR.gain.value = val * factor * (subR / 100);
+    }
+});
+document.getElementById('balance').addEventListener('input', function() {
+    if (!trialValid) return;
+    const val = parseFloat(this.value);
+    let label = 'Center';
+    if (val < -0.3) label = 'L ' + Math.round(Math.abs(val) * 100) + '%';
+    else if (val > 0.3) label = 'R ' + Math.round(val * 100) + '%';
+    document.getElementById('balanceVal').textContent = label;
+    if (initialized) {
+        const volL = parseFloat(document.getElementById('volL').value);
+        const volR = parseFloat(document.getElementById('volR').value);
+        if (gainL) { const factorL = val <= 0 ? 1 : 1 - val; gainL.gain.value = (mutedL ? 0 : volL) * factorL * (subL / 100); }
+        if (gainR) { const factorR = val >= 0 ? 1 : 1 + val; gainR.gain.value = (mutedR ? 0 : volR) * factorR * (subR / 100); }
+    }
+});
+document.getElementById('limiterThreshold').addEventListener('input', updateLimiter);
+document.getElementById('muteL').addEventListener('click', function() {
+    if (!trialValid) return;
+    mutedL = !mutedL; this.classList.toggle('muted'); this.textContent = mutedL ? 'Unmute' : 'Mute';
+    if (initialized && gainL) {
+        const volL = parseFloat(document.getElementById('volL').value);
+        const balance = parseFloat(document.getElementById('balance').value);
+        const factor = balance <= 0 ? 1 : 1 - balance;
+        gainL.gain.value = mutedL ? 0 : volL * factor * (subL / 100);
+    }
+});
+document.getElementById('muteR').addEventListener('click', function() {
+    if (!trialValid) return;
+    mutedR = !mutedR; this.classList.toggle('muted'); this.textContent = mutedR ? 'Unmute' : 'Mute';
+    if (initialized && gainR) {
+        const volR = parseFloat(document.getElementById('volR').value);
+        const balance = parseFloat(document.getElementById('balance').value);
+        const factor = balance >= 0 ? 1 : 1 + balance;
+        gainR.gain.value = mutedR ? 0 : volR * factor * (subR / 100);
+    }
+});
+document.getElementById('subL').addEventListener('input', updateSub);
+document.getElementById('subR').addEventListener('input', updateSub);
+
+['hpfL','lpfL','hpfR','lpfR'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        if (!trialValid) return;
+        const val = parseFloat(this.value);
+        const labelId = id + 'val';
+        const node = id.includes('hpfL') ? hpfLNode : id.includes('lpfL') ? lpfLNode : id.includes('hpfR') ? hpfRNode : lpfRNode;
+        if (initialized && node) node.frequency.value = val;
+        const display = val >= 1000 ? (val/1000)+'kHz' : val+'Hz';
+        document.getElementById(labelId).textContent = display;
+    });
+});
+
+function getSettings() {
+    const eqL = [], eqR = [];
+    document.querySelectorAll('#eqL input[type="range"]').forEach(s => eqL.push(s.value));
+    document.querySelectorAll('#eqR input[type="range"]').forEach(s => eqR.push(s.value));
+    return {
+        volL: document.getElementById('volL').value, volR: document.getElementById('volR').value,
+        balance: document.getElementById('balance').value,
+        limiterThreshold: document.getElementById('limiterThreshold').value,
+        subL: document.getElementById('subL').value, subR: document.getElementById('subR').value,
+        eqL, eqR,
+        hpfL: document.getElementById('hpfL').value, lpfL: document.getElementById('lpfL').value,
+        hpfR: document.getElementById('hpfR').value, lpfR: document.getElementById('lpfR').value
+    };
+}
+
+function applySettings(s) {
+    if (!s || !trialValid) return;
+    document.getElementById('volL').value = s.volL || 1; document.getElementById('volR').value = s.volR || 1;
+    document.getElementById('balance').value = s.balance || 0;
+    document.getElementById('limiterThreshold').value = s.limiterThreshold || -6;
+    document.getElementById('subL').value = s.subL || 100; document.getElementById('subR').value = s.subR || 100;
+    document.getElementById('hpfL').value = s.hpfL || 20; document.getElementById('lpfL').value = s.lpfL || 100;
+    document.getElementById('hpfR').value = s.hpfR || 100; document.getElementById('lpfR').value = s.lpfR || 20000;
+    document.querySelectorAll('#eqL input[type="range"]').forEach((sl, i) => { if (s.eqL && s.eqL[i]) { sl.value = s.eqL[i]; sl.dispatchEvent(new Event('input')); } });
+    document.querySelectorAll('#eqR input[type="range"]').forEach((sl, i) => { if (s.eqR && s.eqR[i]) { sl.value = s.eqR[i]; sl.dispatchEvent(new Event('input')); } });
+    const volL = parseFloat(s.volL || 1); const volR = parseFloat(s.volR || 1);
+    document.getElementById('volValL').textContent = volL == 0 ? '-∞' : Math.round(20 * Math.log10(volL)) + ' dB';
+    document.getElementById('volValR').textContent = volR == 0 ? '-∞' : Math.round(20 * Math.log10(volR)) + ' dB';
+    const balance = parseFloat(s.balance || 0);
+    let label = 'Center'; if (balance < -0.3) label = 'L ' + Math.round(Math.abs(balance) * 100) + '%'; else if (balance > 0.3) label = 'R ' + Math.round(balance * 100) + '%';
+    document.getElementById('balanceVal').textContent = label;
+    document.getElementById('limiterVal').textContent = (s.limiterThreshold || -6) + ' dB';
+    document.getElementById('subLVal').textContent = (s.subL || 100) + '%';
+    document.getElementById('subRVal').textContent = (s.subR || 100) + '%';
+    const hpfLv = parseFloat(s.hpfL || 20); const lpfLv = parseFloat(s.lpfL || 100);
+    const hpfRv = parseFloat(s.hpfR || 100); const lpfRv = parseFloat(s.lpfR || 20000);
+    document.getElementById('hpfLval').textContent = hpfLv >= 1000 ? (hpfLv/1000)+'kHz' : hpfLv+'Hz';
+    document.getElementById('lpfLval').textContent = lpfLv >= 1000 ? (lpfLv/1000)+'kHz' : lpfLv+'Hz';
+    document.getElementById('hpfRval').textContent = hpfRv >= 1000 ? (hpfRv/1000)+'kHz' : hpfRv+'Hz';
+    document.getElementById('lpfRval').textContent = lpfRv >= 1000 ? (lpfRv/1000)+'kHz' : lpfRv+'Hz';
+    if (initialized) {
+        const factorL = balance <= 0 ? 1 : 1 - balance;
+        const factorR = balance >= 0 ? 1 : 1 + balance;
+        const subLg = (parseFloat(s.subL || 100)) / 100;
+        const subRg = (parseFloat(s.subR || 100)) / 100;
+        if (!mutedL && gainL) gainL.gain.value = volL * factorL * subLg;
+        if (!mutedR && gainR) gainR.gain.value = volR * factorR * subRg;
+        if (hpfLNode) hpfLNode.frequency.value = hpfLv;
+        if (lpfLNode) lpfLNode.frequency.value = lpfLv;
+        if (hpfRNode) hpfRNode.frequency.value = hpfRv;
+        if (lpfRNode) lpfRNode.frequency.value = lpfRv;
+        if (limiterL) limiterL.threshold.value = parseFloat(s.limiterThreshold || -6);
+        if (limiterR) limiterR.threshold.value = parseFloat(s.limiterThreshold || -6);
+    }
+}
+
+window.saveSettings = function() { if (!trialValid) return; try { localStorage.setItem('dlmsSettings', JSON.stringify(getSettings())); document.getElementById('status').textContent = '💾 Settings saved!'; } catch(e) { document.getElementById('status').textContent = '❌ Save failed'; } };
+window.loadSettings = function() { if (!trialValid) return; try { const data = localStorage.getItem('dlmsSettings'); if (data) { applySettings(JSON.parse(data)); document.getElementById('status').textContent = '📂 Settings loaded!'; } else { document.getElementById('status').textContent = '⚠️ No saved settings'; } } catch(e) { document.getElementById('status').textContent = '❌ Load failed'; } };
+window.resetAll = function() { if (!trialValid) return; if (confirm('Reset semua pengaturan?')) { localStorage.removeItem('dlmsSettings'); location.reload(); } };
+
+document.addEventListener('keydown', function(e) {
+    if (!trialValid) return;
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); if (audio.paused) audio.play(); else audio.pause(); }
+    if (e.key === 'm') { document.getElementById('muteL').click(); document.getElementById('muteR').click(); }
+    if (e.key === 'ArrowRight') playlistNext();
+    if (e.key === 'ArrowLeft') playlistPrev();
+});
+
+window.playlistPlay = playlistPlay; window.playlistPause = playlistPause; window.playlistNext = playlistNext;
+window.playlistPrev = playlistPrev; window.playlistClear = playlistClear; window.playlistShuffle = playlistShuffle;
+window.playlistRepeat = playlistRepeat; window.playlistRemove = playlistRemove; window.playlistPlayIndex = playlistPlayIndex;
+
+setTimeout(() => {
+    const saved = localStorage.getItem('dlmsSettings');
+    if (saved && trialValid) { try { applySettings(JSON.parse(saved)); } catch(e) {} }
+    updateLimiter();
+    renderPlaylist();
+}, 300);
+if (trialValid) animateVU();
+</script>
+</body>
+</html>
